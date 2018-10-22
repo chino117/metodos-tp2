@@ -7,7 +7,7 @@
 //#include "../src_catedra/vector_builder.h"
 
 #include <limits>
-#include "metodos_reduc.hpp"
+#include "eigen.hpp"
 #include <cmath>
 #include <ctime>
 #include "clasificador.hpp"

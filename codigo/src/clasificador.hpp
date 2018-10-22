@@ -1,7 +1,7 @@
 #ifndef CLASIFICADOR_HPP
 #define CLASIFICADOR_HPP
 #include "matriz.hpp"
-#include "normas_aux.hpp"
+#include "normas.hpp"
 #include <vector>
 #include <map>
 #include <unordered_map>

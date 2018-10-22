@@ -1,7 +1,7 @@
 #ifndef METODOS_REDUC_HPP
 #define METODOS_REDUC_HPP
 #include "matriz_aux.hpp"
-#include "normas_aux.hpp"
+#include "normas.hpp"
 
 
 //Metodo de la potencia

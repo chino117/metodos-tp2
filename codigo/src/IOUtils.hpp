@@ -6,7 +6,7 @@
 #include <cstdio>
 #include <limits>
 #include <algorithm>
-#include "preprocesamiento.hpp"
+#include "pca.hpp"
 #include <getopt.h>
 #include "../src_catedra/vector_builder.h"
 

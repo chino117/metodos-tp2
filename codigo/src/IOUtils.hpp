@@ -9,6 +9,8 @@
 #include "pca.hpp"
 #include <getopt.h>
 #include "../src_catedra/vector_builder.h"
+#include <stdlib.h>
+#include <ctime>
 
 using namespace std;
 
@@ -22,6 +24,8 @@ enum Modo{
 
 struct info_archivo
 {
+    //pathas a archivos.
+    string db_path = "../datos/imdb_tokenized.csv";
     string in_train;
     string in_test;
     string out_res;
@@ -32,14 +36,27 @@ struct info_archivo
     unsigned int n_test;
 
     bool experimentacion;
+    bool norma_2 = false;
 
     unsigned int k;
     unsigned int alpha;
 
+    //mapea indice o review id a clase.
     map<int,int> train_cases;
     map<int,int> test_cases;
 
-    vector<unsigned int> clases_predichas;
+    //la posicion i-esima contiene la clase correspondiente a la muestra de la fila i-esima de las 
+    //matrices de train y test respectivamente. 
+    vector<int> train_clase_x_fila;
+    vector<int> test_clase_x_fila;
+
+    int iteraciones;
+    double lower_filter;
+    double upper_filter;
+    double epsilon_potencia;
+
+    vector<int> clases_predichas;
+
 
 };
 
@@ -67,13 +84,13 @@ public:
 	~IOUtils();
 	int parse(int arc, char** argv, info_archivo& info);
 	void leer_archivos_csv(string path_1, string path_2, info_archivo& info);
-    Matriz<double> leer_bag_of_words(const vector<double>& bag_of_words, int N);
-    Matriz<double> armar_base_entrenamiento(const VectorizedEntriesMap& train_entries, int N, int m);
-    Matriz<double> armar_casos_tests(const VectorizedEntriesMap& test_entries, int N, int m_test);
-	DiccNatANat obtener_clases_train( const VectorizedEntriesMap& train_entries, int m);
-	std::vector<unsigned int> obtener_clases_test( const VectorizedEntriesMap& train_entries, int m_test);
+    Matriz<double> leer_bag_of_words(vector<double>& bag_of_words, int N);
+    Matriz<double> armar_base_entrenamiento(info_archivo &info, VectorizedEntriesMap& train_entries, int N);
+    Matriz<double> armar_casos_tests(info_archivo &info,  VectorizedEntriesMap& test_entries, int N);
+	vector<int>  obtener_clases_train(info_archivo &info);
+	vector<int> obtener_clases_test(info_archivo &info);
 	void escribir_autovalores(const Matriz<double>& datos, const info_archivo& info,const std::string& output);
-	void escribir_output(string &out_res, info_archivo &info, vector<unsigned int> &clases_predichas);
+	void escribir_output(string &out_res, info_archivo &info, vector<int> &clases_predichas);
 	void escribir_medidas(info_archivo &info, medidas_info &r, clock_t total);
 };
 
@@ -98,9 +115,13 @@ int IOUtils::parse(int argc, char** argv, info_archivo& info){
     info.m = kNN;
     int modo_s;
     info.experimentacion = false;
+    info.iteraciones = 200;
+    info.epsilon_potencia = EPSILON;
+    info.lower_filter = 0.01;
+    info.upper_filter = 0.99;
 
    	char option;
-    while ((option = getopt(argc, argv, "m:i:q:o:k:a:r:e")) != -1) {
+    while ((option = getopt(argc, argv, "m:d:i:q:o:k:a:r:eit:ep:l:u:n:")) != -1) {
 
         switch (option) {
             case 'm':{
@@ -115,6 +136,10 @@ int IOUtils::parse(int argc, char** argv, info_archivo& info){
                          return 1;
                      }
                      break;
+            }
+            case 'd':{
+                info.db_path = optarg;
+                break;
             }
             case 'i':{
             	info.in_train = optarg;
@@ -155,6 +180,25 @@ int IOUtils::parse(int argc, char** argv, info_archivo& info){
             case 'e':{
             	info.experimentacion = true;
             	break;
+            }
+            case 't':{
+                info.iteraciones = stoi(optarg);
+                break;
+            }
+            case 'p':{
+                info.epsilon_potencia = stod(optarg);
+                break;
+            }
+            case 'l':{ 
+                info.lower_filter = stod(optarg);
+                break;
+            }
+            case 'u':{
+                info.upper_filter = stod(optarg);
+                break;
+            }
+            case 'n':{
+                info.norma_2 = stoi(optarg);
             }
 
             default: { // si las opciones son inválidas
@@ -258,7 +302,7 @@ void IOUtils::leer_archivos_csv(string path_1, string path_2, info_archivo& info
     fs2.close();
 }
 
-Matriz<double> IOUtils::leer_bag_of_words(const vector<double>& bag_of_words, int N)
+Matriz<double> IOUtils::leer_bag_of_words(vector<double>& bag_of_words, int N)
 {
     
     
@@ -279,90 +323,70 @@ Matriz<double> IOUtils::leer_bag_of_words(const vector<double>& bag_of_words, in
 
 
 // Devuelve una matriz con las reviews de entrenamiento como vectores fila
-Matriz<double> IOUtils::armar_base_entrenamiento(const VectorizedEntriesMap& train_entries, int N, int m)
+Matriz<double> IOUtils::armar_base_entrenamiento(info_archivo &info, VectorizedEntriesMap& train_entries, int N)
 {
-    Matriz<double> res(m, N, 0);
+    Matriz<double> res(info.n_train, N, 0);
     int cant_reviews= 0;
 
-    for(auto it = train_entries.begin(); it != train_entries.end() && cant_reviews < m; it++)
-    {       //cout << "conver" << endl;
+    info.train_clase_x_fila = vector<int>(info.n_train);
 
-            //if(it->second.is_positive) cout << "pos" << endl;
-            Matriz<double> bow = leer_bag_of_words(it->second.bag_of_words, N);
+    for (auto it = info.train_cases.begin(); it != info.train_cases.end(); it++)
+    {
+        Matriz<double> bow = leer_bag_of_words((train_entries[it->first]).bag_of_words, N);
           
-            res.set_fil(cant_reviews, bow);
-            //cout << "set fil" << endl;
-            cant_reviews++;
+        res.set_fil(cant_reviews, bow);
+        
+        // Agrego clase al vector de clase x fila del train.
+        info.train_clase_x_fila[cant_reviews] = it->second;
+
+        cant_reviews++;
     }
 
     return res;
 }
 
 // Devuelve una matriz con las reviews de test como vectores fila
-Matriz<double> IOUtils::armar_casos_tests(const VectorizedEntriesMap& test_entries, int N, int m_test)
+Matriz<double> IOUtils::armar_casos_tests(info_archivo &info, VectorizedEntriesMap& test_entries, int N)
 {
-    Matriz<double> res(test_entries.size(), N, 0);
+    Matriz<double> res(info.n_test, N, 0);
     int cant_reviews= 0;
 
-    for(auto it = test_entries.begin(); it != test_entries.end() && cant_reviews < m_test/2; it++)
+    info.test_clase_x_fila = vector<int>(info.n_test);
+
+    for(auto it = info.test_cases.begin(); it != info.test_cases.end(); it++)
     {   
-            Matriz<double> bow = leer_bag_of_words(it->second.bag_of_words, N);
+            Matriz<double> bow = leer_bag_of_words((test_entries[it->first]).bag_of_words, N);
           
             res.set_fil(cant_reviews, bow);
+
+            info.test_clase_x_fila[cant_reviews] = it->second;
+
             cant_reviews++;
         
     }
-
-
-    for(auto it = test_entries.end(); it != test_entries.begin() && cant_reviews < m_test; it--)
-    {   
-            Matriz<double> bow = leer_bag_of_words(it->second.bag_of_words, N);
-          
-            res.set_fil(cant_reviews, bow);
-            cant_reviews++;
-        
-    }
-
     return res;
 }
 
-//Devuelve un diccionario tal que para cada review de train, devuelve su clase.
-DiccNatANat IOUtils::obtener_clases_train(const VectorizedEntriesMap &train_entries, int m)
+//Devuelve un vector tal que para cada fila de la matriz de train, devuelva su clase. 
+vector<int> IOUtils::obtener_clases_train(info_archivo &info)
 {
-    DiccNatANat res;
-    int cant_reviews = 0;
-    for(auto it = train_entries.begin(); it != train_entries.end() && cant_reviews < m; it++){
-           // if(it->second.is_positive) cout << "pos" << endl;
-            res[cant_reviews] = it->second.is_positive;
-            cant_reviews++;
-        }
 
-    return res;
+    return info.train_clase_x_fila;
+
 }
 
-//Devuelve un vector tal que para cada review de test, devuelve su clase..
-std::vector<unsigned int> IOUtils::obtener_clases_test(const  VectorizedEntriesMap &test_entries, int m_test)
+//Devuelve un vector tal que para cada fila de la matriz de test, devuelve su clase..
+vector<int> IOUtils::obtener_clases_test(info_archivo &info)
 {
-    std::vector<unsigned int> res;
-    int cant_test = 0;
-    for(auto it = test_entries.begin(); it != test_entries.end() && cant_test < m_test/2; it++){
-        res.push_back((unsigned int)it->second.is_positive);
-        cant_test++;
-    }
 
-    for(auto it = test_entries.end(); it != test_entries.begin() && cant_test < m_test; it--){
-        res.push_back((unsigned int)it->second.is_positive);
-        cant_test++;
-    }
-
-    return res;
+    return info.test_clase_x_fila;
 }
 
 // Escribe en el archivo de output los autovalores de la matriz de covarianza de datos
 void IOUtils::escribir_autovalores(const Matriz<double>& datos, const info_archivo& info,const std::string& output)
 {
     string filename = info.out_res+".autovalores";
-    Matriz<double> autoval_pca = pca_autovalores(datos, info.alpha);
+    Matriz<double> autoval_pca = pca_autovalores(datos, info.alpha, info.iteraciones, info.epsilon_potencia);
 
     std::ifstream test_out_autovalroes(filename.c_str());
     if(test_out_autovalroes.good())
@@ -387,7 +411,7 @@ void IOUtils::escribir_autovalores(const Matriz<double>& datos, const info_archi
     f.close();
 }
 
-void IOUtils::escribir_output(string &out_res, info_archivo &info, vector<unsigned int> &clases_predichas){
+void IOUtils::escribir_output(string &out_res, info_archivo &info, vector<int> &clases_predichas){
 
     ofstream file;
     file.open(out_res.c_str());
@@ -407,7 +431,7 @@ void IOUtils::escribir_medidas(info_archivo &info, medidas_info &r, clock_t tota
     if(!f.good())
         cout<<"Error: No se pudo escribir el archivo con las medidas tomadas\n";
     f<<std::setprecision(10);
-    f<<"Tiempo(en ticks):\n"<<total<<'\n';
+    f<<"Tiempo(segundos):\n"<<total/CLOCKS_PER_SEC<<'\n';
     f<<r;
     f.close();
 }

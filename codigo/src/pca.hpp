@@ -10,7 +10,7 @@ const int CANT_POTENCIA = 10000;
 //Las columnas son los autovectores
 
 
-Matriz<double> pca_autovectores(const Matriz<double>& datos, const Matriz<double>& med, unsigned int alfa)
+Matriz<double> pca_autovectores(const Matriz<double>& datos, const Matriz<double>& med, unsigned int alpha, int niter, double epsilon)
 {
     Matriz<double> x(datos);
     Matriz<double> v(datos.filas(), 1, 1);
@@ -21,13 +21,13 @@ Matriz<double> pca_autovectores(const Matriz<double>& datos, const Matriz<double
     Matriz<double> xt(x.traspuesta());
 
 
-    Matriz<double> autovec = obtener_autovectores(xt*x, CANT_POTENCIA, alfa);
+    Matriz<double> autovec = obtener_autovectores(xt*x, niter, epsilon, alpha);
 
     return autovec;
 }
 
 
-Matriz<double> pca_autovalores(const Matriz<double>& datos, unsigned int alfa)
+Matriz<double> pca_autovalores(const Matriz<double>& datos, unsigned int alpha, int niter, double epsilon)
 {
     Matriz<double> x(datos);
     Matriz<double> med = media(x);
@@ -37,7 +37,7 @@ Matriz<double> pca_autovalores(const Matriz<double>& datos, unsigned int alfa)
     x -= v*med;
     x /= std::sqrt(double(datos.filas() - 1));
 
-    Matriz<double> res = obtener_autovalores(x.traspuesta()*x, CANT_POTENCIA, alfa);
+    Matriz<double> res = obtener_autovalores(x.traspuesta()*x, niter, epsilon, alpha);
     return res;
 }
 

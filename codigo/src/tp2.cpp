@@ -17,23 +17,42 @@
 
 using namespace std;
 
-/*
 int tp2(IOUtils &utilidad, info_archivo &info){
+
+    double lower_filter = info.lower_filter;
+    double upper_filter = info.upper_filter;
+    
+    auto filter_out = [lower_filter, upper_filter] (const int token, const FrecuencyVocabularyMap & vocabulary) {
+        /**
+         *  Lambda para usar como filtro de vocabulario
+         *  Retorna `true` si `token` debe eliminarse
+         *  Retorna `false` si `token` no debe eliminarse
+         **/
+        double token_frecuency = vocabulary.at(token);
+        return token_frecuency < lower_filter || token_frecuency > upper_filter;
+    };
+    VectorizedEntriesMap train_entries;
+    VectorizedEntriesMap test_entries;
+    build_vectorized_datasets( info.db_path,train_entries, test_entries, filter_out);
+
+    int N = train_entries.begin()->second.bag_of_words.size();
+
 
     //Seteamos el seed de random
     srandom(0);
     
     utilidad.leer_archivos_csv(info.in_train,info.in_test,info);
-   
+    cout << "hi" << endl;
     //Cambio la cantidad de digitos con las que nos muestra los doubles en pantalla
     cout << fixed;std::setprecision(50);   
 
-    Matriz<double> train(utilidad.armar_base_entrenamiento(info));
-    Matriz<double> test(utilidad.armar_casos_tests(info));
+    Matriz<double> train(utilidad.armar_base_entrenamiento(info, train_entries, N));
+    Matriz<double> test(utilidad.armar_casos_tests(info, test_entries, N));
 
-    // Obtenemos las clases de cada review de la base de train y test
-    DiccNatANat c_train(utilidad.obtener_clases_train(info));
-    vector<unsigned int> c_test(utilidad.obtener_clases_test(info));
+    std::cerr
+        << "N: " << N << std::endl
+        << "Dataset de entrenamiento: " << info.n_train << " entradas" << std::endl
+        << "Dataset de testeo: " << info.n_test << " entradas" << std::endl;
 
     // Escribimos los autovalores de la matriz con la que hacemos el cambio de variables
     if (info.experimentacion) {utilidad.escribir_autovalores(train, info, info.out_res);}
@@ -46,7 +65,7 @@ int tp2(IOUtils &utilidad, info_archivo &info){
 
         Matriz<double> med = media(train);
 
-        Matriz<double> autovec = pca_autovectores(train, med, info.alpha);
+        Matriz<double> autovec = pca_autovectores(train, med, info.alpha, info.iteraciones, info.epsilon_potencia);
         // Aplico la transformacion dada por PCA sobre los datos de la base de train
         train = tc_matriz(autovec, train, med);  
 
@@ -59,12 +78,12 @@ int tp2(IOUtils &utilidad, info_archivo &info){
      
     clock_t clasif = clock();
     // Clasificamos las review de test usando las de train y obtenemos mediciones
-    Clasificador c(train, c_train);
-    medidas_info r = c.clasificar_y_medir(test, c_test, info.k);
+    Clasificador c(train, info.train_clase_x_fila, info.norma_2);
+    medidas_info r = c.clasificar_y_medir(test, info.test_clase_x_fila, info.k);
     clasif = ((clock() - clasif));
     total = total + clasif;
 
-    utilidad.escribir_output(info.out_res, info, r.reviews_predichas);
+    utilidad.escribir_output(info.out_res, info, r.clases_predichas);
 
     // Escribimos las mediciones en un archivo
 
@@ -80,13 +99,14 @@ int tp2(IOUtils &utilidad, info_archivo &info){
      return 0;
 
 }
-*/
-/*
+
+
 int main(int argc, char* argv[]){
     //Filtramos los datos de entrada
-   
+
     IOUtils utilidad;
     info_archivo info;
+
     utilidad.parse(argc,argv, info);
 
     tp2(utilidad,info);
@@ -94,4 +114,3 @@ int main(int argc, char* argv[]){
 
     return 0;
 }
-*/

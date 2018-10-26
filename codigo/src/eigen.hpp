@@ -8,7 +8,7 @@
 //Asume que vec y autovec son filas
 //Vec es el vector inicial
 //Se ejecuta hasta que no cambian mucho los valores generados o hasta niter
-double met_potencia(const Matriz<double>& b, const Matriz<double>& vec, int niter, Matriz<double>& autovec)
+double met_potencia(const Matriz<double>& b, const Matriz<double>& vec, int niter, Matriz<double>& autovec, double epsilon)
 {
     Matriz<double> anterior(autovec.filas(),autovec.columnas(),0);
     autovec = vec;
@@ -16,7 +16,8 @@ double met_potencia(const Matriz<double>& b, const Matriz<double>& vec, int nite
     {
         Matriz<double> temp = b*autovec;
         autovec = temp/norma_2_vec(temp);
-        if(son_parecidas_epsilon(autovec,anterior,EPSILON))
+
+        if(son_parecidas_epsilon(autovec,anterior,epsilon))
             break;
 	anterior = autovec;
     }
@@ -26,7 +27,7 @@ double met_potencia(const Matriz<double>& b, const Matriz<double>& vec, int nite
 }
 
 //Devuelve una matriz con los autovectores de datos, en las columnas
-Matriz<double> obtener_autovectores(const Matriz<double>& datos, int niter)
+Matriz<double> obtener_autovectores(const Matriz<double>& datos, int niter, double epsilon)
 {
     Matriz<double> b(datos);
 
@@ -40,7 +41,7 @@ Matriz<double> obtener_autovectores(const Matriz<double>& datos, int niter)
     int i = 0;
     while(i < datos.filas())
     {
-        autoval[i][0] = met_potencia(b, x, niter, temp);
+        autoval[i][0] = met_potencia(b, x, niter, temp, epsilon);
         if(comp_doubles_epsilon(autoval[i][0], autoval[i][0],EPSILON))
         {
             b -= autoval[i][0]*(temp*temp.traspuesta());
@@ -57,7 +58,7 @@ Matriz<double> obtener_autovectores(const Matriz<double>& datos, int niter)
 }
 
 //Devuelve una matriz con los primeros j autovectores de datos, en las columnas
-Matriz<double> obtener_autovectores(const Matriz<double>& datos, int niter,int j)
+Matriz<double> obtener_autovectores(const Matriz<double>& datos, int niter, double epsilon, int alpha)
 {
     Matriz<double> b(datos);
 
@@ -65,13 +66,13 @@ Matriz<double> obtener_autovectores(const Matriz<double>& datos, int niter,int j
     x = x/norma_2_vec(x);
 
     Matriz<double> autoval(datos.filas(),1,0.0);
-    Matriz<double> res(datos.filas(),j,0.0);
+    Matriz<double> res(datos.filas(),alpha,0.0);
 
     Matriz<double> temp(x);
     int i = 0;
-    while(i < j)
+    while(i < alpha)
     {
-        autoval[i][0] = met_potencia(b,x,niter,temp);
+        autoval[i][0] = met_potencia(b,x,niter,temp, epsilon);
         if(comp_doubles_epsilon(autoval[i][0], autoval[i][0],EPSILON))
         {
             b -= autoval[i][0]*(temp*temp.traspuesta());
@@ -88,7 +89,7 @@ Matriz<double> obtener_autovectores(const Matriz<double>& datos, int niter,int j
 }
 
 //Devuelve un vector columna con los autovalores de datos
-Matriz<double> obtener_autovalores(const Matriz<double>& datos, int niter)
+Matriz<double> obtener_autovalores(const Matriz<double>& datos, int niter, double epsilon)
 {
     Matriz<double> b(datos);
 
@@ -101,7 +102,7 @@ Matriz<double> obtener_autovalores(const Matriz<double>& datos, int niter)
     while(i < datos.filas())
     {
         Matriz<double> temp(x);
-        res[i][0] = met_potencia(b,x,niter,temp);
+        res[i][0] = met_potencia(b,x,niter,temp, epsilon);
         if(comp_doubles_epsilon(res[i][0], res[i][0],EPSILON))
         {
             b -= (res[i][0]*temp*temp.traspuesta());
@@ -117,20 +118,20 @@ Matriz<double> obtener_autovalores(const Matriz<double>& datos, int niter)
 }
 
 //Devuelve una vector columna con los primeros j autovalores de datos
-Matriz<double> obtener_autovalores(const Matriz<double>& datos, int niter,int j)
+Matriz<double> obtener_autovalores(const Matriz<double>& datos, int niter, double epsilon, int alpha)
 {
     Matriz<double> b(datos);
 
     Matriz<double> x(gen_matriz_random(datos.filas(),1)); 
     x = x/norma_2_vec(x);
 
-    Matriz<double> res(j,1,0.0);
+    Matriz<double> res(alpha,1,0.0);
 
     int i = 0;
-    while(i < j)
+    while(i < alpha)
     {
         Matriz<double> temp(x);
-        res[i][0] = met_potencia(b,x,niter,temp);
+        res[i][0] = met_potencia(b,x,niter,temp, epsilon);
         if(comp_doubles_epsilon(res[i][0], res[i][0],EPSILON))
         {
             b -= res[i][0]*(temp*temp.traspuesta());

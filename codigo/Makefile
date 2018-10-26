@@ -25,7 +25,7 @@ all:
 clean:
 	echo " Cleaning...";
 	echo " $(RM) -r $(BUILDDIR) $(TARGET)"; $(RM) -r $(BUILDDIR) $(TARGET)
+	rm -f tp2
 
-
-main: $(OBJECTS)
-	$(CC) $(CFLAGS) $(INC) $^ -o $(BUILDDIR)/main
+tp2: $(OBJECTS)
+	$(CC) $(CFLAGS) $(INC) $^ -o tp2

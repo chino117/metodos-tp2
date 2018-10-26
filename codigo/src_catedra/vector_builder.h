@@ -8,16 +8,18 @@
 #include "reader.h"
 
 void build_vectorized_datasets(
+        const std::string & entries_path,
         VectorizedEntriesMap & train_vectorized_entries,
         VectorizedEntriesMap & test_vectorized_entries,
-        const std::function<bool(int token, const FrecuencyVocabularyMap & vocabulary)> & filter_out) {
+        const std::function<bool(int token, const FrecuencyVocabularyMap & vocabulary)> & filter_out 
+        /*double lower_filter, double upper_filter*/) {
     /**
      * Construye las entradas vectorizadas, filtrándolas según `filter_out`.
      * Si alguna review quedara vacía luego de filtrar esta es eliminada
      **/
     TokenizedEntriesMap train_entries;
     TokenizedEntriesMap test_entries;
-    read_entries(train_entries, test_entries);
+    read_entries(entries_path, train_entries, test_entries);
     cout << "train size" << train_entries.size() << endl;
     cout << "test size" << test_entries.size() << endl;
 

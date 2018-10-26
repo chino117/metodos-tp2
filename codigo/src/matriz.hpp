@@ -227,7 +227,7 @@ Matriz<T> operator*(const Matriz<T>& lhs,const Matriz<T>& rhs)
 {
     assert(lhs.columnas() == rhs.filas());
 
-    int t = 8;
+    int t = 64;
     if(rhs.columnas() < t || lhs.filas() < t || rhs.filas() < t)
         return mult_canonica(lhs,rhs);
     else

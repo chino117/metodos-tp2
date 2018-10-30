@@ -55,7 +55,7 @@ class Clasificador
         vector<int> clasificar(int k, const Matriz<double>& casos_tests) const; 
         medidas_info clasificar_y_medir(const Matriz<double>&, const vector< int>&, int k) const;
         void asignar_base_de_datos(const Matriz<double>&, const vector<int>&);
-        int kNN(int k, const Matriz<double>& caso_test) const;
+        int kNN(int k, const Matriz<double>& caso_test, int muestra) const;
 
     private:
 
@@ -78,9 +78,9 @@ vector<int> Clasificador::clasificar(int k, const Matriz<double>& casos_tests) c
     vector<int> clases_predichas(casos_tests.filas(), 0);
     for(int i = 0;i < casos_tests.filas();i++)
     {
-        Matriz<double> review_a_testear(casos_tests.copy_fil(i));
-
-        clases_predichas[i] = kNN(k, review_a_testear);
+        //Matriz<double> review_a_testear(casos_tests.copy_fil(i));
+        std::cerr << "Prediciendo " << i << " / " << casos_tests.filas() << '\r';
+        clases_predichas[i] = kNN(k, casos_tests, i);
     }  
 
     return clases_predichas;
@@ -104,7 +104,7 @@ medidas_info Clasificador::clasificar_y_medir(const Matriz<double>& tests, const
     for (int i = 0; i < tests.filas(); ++i)
     {
         
-        std::cerr << "Prediciendo " << i << " / " << tests.filas() << '\r';
+        //std::cerr << "Prediciendo " << i << " / " << tests.filas() << '\r';
 
         bool label = (bool)clases_tests[i];
 
@@ -135,7 +135,7 @@ medidas_info Clasificador::clasificar_y_medir(const Matriz<double>& tests, const
 // Primero busca los k vecinos mas cercanos usando norma2
 // Luego realiza la votacion para ver a que clase corresponde el caso de test
 
-int Clasificador::kNN(int k, const Matriz<double>& caso_test) const
+int Clasificador::kNN(int k, const Matriz<double>& casos_tests, int muestra) const
 {
     // Vector que guarda las distancias de los k mas cercanos
     vector<double> min(k,numeric_limits<double>::max());
@@ -143,18 +143,39 @@ int Clasificador::kNN(int k, const Matriz<double>& caso_test) const
     //vector que guarda el numero de fila de los k minimos.
     vector<int> res(k, 0);
 
-    Matriz<double> resta(caso_test);
+    //Matriz<double> resta(caso_test);
 
     //Buscamos los k vecinos mas cercanos
     for(int i=0;i < base_datos.filas();i++)
     {
-        Matriz<double> otra(base_datos.copy_fil(i));
+        double distancia = 0;
+        if(norma_2){
+
+  
+            for (int l = 0; l < base_datos.columnas(); ++l)
+            {
+                 
+                 distancia += abs(base_datos[i][l]-casos_tests[muestra][l])*abs(base_datos[i][l]-casos_tests[muestra][l]);  
+            }
+            distancia = sqrt(distancia);
+
+        }
+        else{
+
+            for (int l = 0; l < base_datos.columnas(); ++l)
+            {
+                 
+                 distancia += abs(base_datos[i][l]-casos_tests[muestra][l]); 
+            }
+
+        }
+
+        /*Matriz<double> otra(base_datos.copy_fil(i));
         resta -= otra;
         
         double distancia;
         if(norma_2){distancia = norma_2_vec(resta);}
-        else {distancia = norma_1(resta);}
-
+        else {distancia = norma_1(resta);}*/
 
 
         int actual = i;
@@ -172,7 +193,7 @@ int Clasificador::kNN(int k, const Matriz<double>& caso_test) const
                 break;
             } 
         } 
-        resta = caso_test;
+        //resta = caso_test;
     }
 
     //Votamos para ver a cual clase le corresponde a cada review

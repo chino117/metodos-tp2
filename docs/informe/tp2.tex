@@ -1,0 +1,75 @@
+
+\documentclass[10pt,a4paper, spanish]{article}
+
+\usepackage{a4wide}
+\usepackage[]{algorithm2e}
+\usepackage{amsfonts}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{cite}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{caratula}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{commath}
+\usepackage{multicol}
+\usepackage{tikz}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{subfigure}
+\usepackage{graphicx}
+
+
+\input{page.layout.tex}
+
+\hypersetup{
+    linktoc=all,
+    linkcolor=blue,
+}
+% \lstset{frame=tb,
+% 	  language=C++,
+% 	  aboveskip=3mm,
+% 	  belowskip=3mm,
+% 	  showstringspaces=false,
+% 	  columns=flexible,
+% 	  basicstyle={\scriptsize\ttfamily},
+% 	  numberstyle=\tiny\color{gray},
+% 	  keywordstyle=\color{blue},
+% 	  commentstyle=\color{green},
+% 	  stringstyle=\color{red},
+% 	  breaklines=true,
+% 	  breakatwhitespace=true,
+% 	  tabsize=3,
+% 	  numbers=left,
+% 	  numbersep=15pt,
+% 	  numberfirstline = false
+% 	}
+
+
+\begin{document}
+
+\input{modules/caratula}
+\newpage
+
+\tableofcontents
+
+\newpage
+\input{modules/introduccion}
+
+\newpage
+\input{modules/desarrollo}
+
+\newpage
+\input{modules/discusion}
+
+\newpage
+\input{modules/conclusion}
+
+\newpage
+\bibliographystyle{plain}
+\bibliography{tp2}
+
+
+\end{document}

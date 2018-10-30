@@ -1,0 +1,78 @@
+%%%
+%%%
+%%% el texto anterior esta en desarrollo-old
+%%%
+
+\section{Desarrollo}
+\subsection{Comentarios sobre la implementación y parámetros del problema}
+\subsubsection*{Bag Of Words}
+Se mencionó que se iba a realizar un filtro de las palabras más y menos usadas del vocabulario ya que no aportan información al problema. Para esto se calcula la frecuencia de aparición de cada palabra en el dataset y se eliminan aquellas que estén fuera de un umbral $U = [f_{min}, f_{max}]$. 
+
+Entonces $f_{min}$ y $f_{max}$ se convierten en hiper parámetros del problema. Es decir, serán valores que deben ser optimizados a través de la experimentación. Se cree que un umbral demasiado chico y un umbral demasiado grande afectarán negativamente los resultados obtenidos por el algoritmo.  
+
+\subsubsection*{k-Vecinos más cercanos(KNN)}
+Como se describió en la sección anterior, KNN evalúa los $k$ vecinos mas cercanos de un punto para determinar la clase a la que pertenece. En este trabajo se utilizará una variante conocida como KNN promediado por distancia. En esta versión se considera, además de la cantidad de repeticiones, las distancias entre este punto y sus vecinos. Por cada repetición de clase se suma a un contador la inversa de la distancia y, luego, se etiqueta al punto con aquella clase cuyo contador sea máximo. Esto ayuda a reducir el efecto negativo que puede tener en la clasificación el hecho de que haya muchas más reseñas correspondientes a una clase en particular en comparación con el resto.
+
+Tras varias discusiones dentro y fuera del grupo, se consideró que sería interesante evaluar la eficiencia del algoritmo usando diferentes normas vectoriales. Por lo que en la experimentación presentada, se buscará encontrar un $k$ que optimice los resultados para cada una de las normas propuestas.
+
+\subsection*{PCA}
+
+%train, med, info.alpha, info.iteraciones, info.epsilon_potencia
+
+%Para obtener una mayor eficiencia temporal a la hora de clasificar, sería bueno reducir el espacio en el que se esta trabajando con PCA para obtener una eficiencia del método similar pero resolviendo un sistema menos complejo. \\
+
+El método PCA toma los conjuntos de puntos ya etiquetados y los que deben ser etiquetados y les aplica la transformación $T$ mencionada en la sección anterior. Esto reduce la dimensión de los datos con el objetivo de mejorar el tiempo de ejecución.
+
+Una buena i
+Además, como se decidió calcular los autovectores de la matriz usando el método de la potencia se deben proveer los criterio de corte del algoritmo. En este caso, el criterio está dado por un $\epsilon$ cercano a cero y una cantidad de iteraciones $i$ fija. El primero determina una cota de convergencia sobre los resultados en cada iteración del algoritmo, cuando esta cota no es alcanzada en la $i$-ésima iteración se considera que el valor conseguido es el resultado deseado (aunque esto puede ser que no sea cierto).\\
+
+Como se desea encontrar el mejor $\alpha$ que depende de los datos, este sera un párametro a determinar mediante la experimentación.
+
+\subsection{Mediciones}
+
+Para obtener el tiempo de ejecución de los métodos, se utilizaron métodos de la librería $"ctime"$, que mide la cantidad de ticks de clock que trascurrieron en un momento dado.
+
+\subsection{Objetivos e hipótesis a experimentar}
+
+\subsubsection{Experimento 1: Método de la potencia}
+
+En este experimento buscamos analizar la cantidad de iteraciones necesarias para obtener los autovalores del a través del método de la potencia.
+
+Para ello tomamos la norma 2 del vector calculado por tal método menos el anterior. Si la diferencia es suficientemente pequeña esperamos que se este convergiendo a un valor.
+
+Tomamos $\epsilon$ = $10^{-9}$ como punto de corte. La matriz a la que se le calculan los autovalores es la matriz de covarianza dada por el conjunto de training completo (25000 reviews), con 1709 palabras o features filtrada por el filtro, dejando de lado las que tienen frecuencia menor a 0.01 y mayor a 0.99.
+
+Calculamos los 50 primeros autovalores de la matriz anteriormente descripta y observamos la cantidad de iteraciones que le demandan para llegar a un vector cuya diferencia con el anterior en la iteración es menor a $\epsilon$. A su vez vemos la calidad (entendida como diferencia con el anterior vector en la iteración) en función del tiempo o cantidad de iteraciones.
+
+\subsubsection{Experimento 2: Filtrado de palabras}
+
+En este experimento vemos como afecta la selección de features , en este caso el filtrado de palabras, a la calidad del resultado obtenido por KNN. 
+
+Para ello primero fijamos el filtro inferior en 0.01 y vamos corriendo el superior entre 0.01 y 0.09
+Luego fijamos el superior en 0.1 y corremos el inferior entre 0.005 y 0.01. El k de KNN  es 20 y no se utiliza PCA. 
+
+Nuestra hipótesis es que palabras muy comunes no aportan demasiado a la hora de reconocer a qué clase pertenece una reseña de película.
+
+\subsubsection{Experimento 3: Normas métricas utilizadas en KNN}
+
+Comparamos la norma 2 y la norma Manhattan. Utilizamos k entre 1 y 35, sin PCA con los filtros obtenidos en el experimento anterior. 
+
+No sabemos qué diferencias se obtendrán entre las distintas normas pero intuimos que dado que definen la distancia que después se usa para determinar  los vecinos más cercanos, su comportamiento puede ser clave a la hora de realizar el método de KNN.
+
+\subsubsection{Experimento 4: Calidad del resultado variando k de KNN}
+
+Con la norma y el filtro obtenido en las experiencias anteriores, se itera el k de KNN entre 1 y 79 variando,saltando de a dos, calculándose las tres métricas y el tiempo que demore en computarse el método. Para cada caso se toman 3 tamaños del conjunto de entrenamiento, 100$\%$ , 75$\%$, 50$\%$, 25$\%$, con cantidad balanceada de reseñas positivas y negativas. 
+
+Creemos que a medida que aumenta el k mejor es la performance del KNN  pero llegado un punto esta puede revertirse ya que consideraría demasiados vecinos más cercanos pudiendo incluir información no deseada (miembros de otras clases que se acercan en distancia al target a etiquetar). 
+
+En cuanto al requerimiento temporal, creemos que los diferentes k no modifican sustancialmente este aspecto.
+
+\subsubsection{Experimento 5: Calidad del resultado utilizando PCA}
+
+Como antes, tomamos la norma y los parámetros del filtro de palabras que se desprenden de las pruebas predecesoras. 
+
+Luego fijando 5 ks distintos (uno de ellos el escogido en el experimento anterior), utilizamos el preprocesamiento de PCA, variando $\alpha$ entre 1 y 50 aumentando de a 5 en cada ocasión y también para $\alpha$ = 2. 
+
+Nuestra hipótesis es que a medida que se toman más autovectores dominantes, se mejora la calidad debido a que se cuenta con mayor información (presuntamente relevante según el preprocesamiento) para recrear cada clase y así poder distinguirlas. 
+
+Sin embargo, a partir de cierto cantidad autovectores dominantes, la calidad puede decrecer debido a que los que se toman en cuenta ya no son tan relevantes como los primeros.

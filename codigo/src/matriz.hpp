@@ -21,6 +21,8 @@ class Matriz
         Matriz(Matriz&& arg);
         ~Matriz();
 
+        void clear();
+
         vector<T>& operator[](int i);
 
         const vector<T>& operator[](int i) const;
@@ -116,6 +118,13 @@ template<class T>
 Matriz<T>::~Matriz()
 {
 
+}
+
+
+template<class T>
+void Matriz<T>::clear(){
+
+    vector<vector<T> >().swap(datos);
 }
 
 template<class T>

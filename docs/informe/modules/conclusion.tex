@@ -1,0 +1,18 @@
+\section{Conslusión}
+
+En el presente trabajo vimos como aplicar métodos de álgebra lineal y aprendizaje automático supervisado para una variante del Procesamiento del Lenguaje Natural, el análisis de Sentimiento. \\
+Gracias a la técnica de Bag of Words, calculamos la frecuencia de aparición de cada palabra en las reseñas.
+Tras esto y con el objetivo de clasificar reseñas de película de la base de datos de IMDB de acuerdo a si la apreciación que el autor hace del film es positiva o negativa se utilizó el método de k vecinos más cercanos arrojando resultados más que aceptables.\\
+
+Como la cantidad de palabras del vocabulario es enorme en relación a la cantidad de muestras de entrenamiento y testeo, se aplicó un filtro sobre ellas. Este parámetro que limita las palabras a considerar resultó ser uno de los más determinantes para la obtención de una buena accuracy.\\
+Tomando solo las palabras cuya frecuencia sea menor a 0.1 y mayor a 0.03, nos quedamos con 455 palabras, obteniéndose un puntaje de 0.78 en accuracy (nuestra métrica predilecta puesto que nos interesa distinguir correctamente el sentimiento de las reseñas) al combinarlo con k = 78. \\
+
+Se probó la utilización de la técnica de preprocesamitnto PCA que con el fin de reducir la dimensionalidad de los datos, captura las componentes que más varían a lo largo del conjunto de entrenamiento. Esta técnica combinada con kNN redundó en un peor score para el k escogido pero comprobamos que para k menores a 15 tal seleccioń de componentes principales mejora la efectividad de kNN. \\
+A su vez, se corroboró que el tiempo que demora PCA + kNN es bastante menor ,para los $\alpha$ < 50, que el uso de kNN sin PCA. En algún caso donde sea indispensable obtener rápidamente una clasificación del sentimiento de una reseña, PCA puede resultar ser lo deseado a costa de una menor accuracy. \\
+
+Queda para trabajos a futuro: 
+\begin{itemize}
+\item Probar una mejora del método de kNN. En particular, una que no elija la clase en base a la moda si no que también pondere las distancias a esos k vecinos más cercanos.
+\item Experimentar usando cross validation para generalizar aún más la clasificación.
+\item ngramas. 
+\end{itemize}

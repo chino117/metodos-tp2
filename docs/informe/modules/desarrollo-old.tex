@@ -1,0 +1,129 @@
+\section{Desarrollo}
+
+Dada la introducción teórica, se detallará  el rol de cada método implementado.
+
+\subsection{k-Vecinos más cercanos(KNN)}
+% Consideramos cada una de las características de una reseña en nuestra base de datos como una dimensión diferente en algún espacio, y tomamos el valor que una observación tiene para esta característica como su coordenada en esa dimensión, obteniendo un conjunto de puntos en el espacio. Entonces consideramos la similitud de dos reseñas como la distancia entre sus coordenadas en este espacio bajo una métrica apropiada.\\
+% La manera en que el algoritmo KNN decide cuales de las reseñas de nuestra base de datos son suficientemente similares para ser consideradas cuando buscamos la clase de una nueva observación es tomar las $k$ imágenes más cercanas a la nueva observación, y luego tomar la clase más común entre ellas. Esta es la forma canónica de KNN.\\
+
+% El algoritmo puede ser resumido como:
+% \begin{enumerate}
+% \item Un entero $k$ es especificado, junto con una nueva reseña
+% \item Seleccionamos las $k$ reseñas en nuestra base de datos que están más cerca de la nueva imagen
+% \item Encontramos la clase más común de estas reseñas
+% \item Esta es la clasificación que le damos a la nueva reseña
+% \end{enumerate}
+
+Como se describió en la sección anterior, KNN evalúa los $k$ vecinos mas cercanos de un punto para determinar la clase a la que pertenece. En este trabajo se utilizará una variante conocida como KNN promediado por distancia. En esta versión se considera, además de la cantidad de repeticiones, las distancias entre este punto y sus vecinos. Por cada repetición de clase se suma a un contador la inversa de la distancia y, luego, se etiqueta al punto con aquella clase cuyo contador sea máximo. Esto ayuda a reducir el efecto negativo que puede tener en la clasificación el hecho de que haya muchas más reseñas correspondientes a una clase en particular en comparación con el resto. 
+
+Tras varias discusiones dentro y fuera del grupo, se consideró que sería interesante evaluar la eficiencia del algoritmo usando diferentes normas vectoriales. Por lo que en la experimentación presentada, se buscará encontrar un $k$ que optimice los resultados para cada una de las normas propuestas.
+
+% \subsection{Relación $k$ de KNN con el conjunto de entrenamiento}
+% %FALTA?
+% Para elegir el valor del parámetro $k$ del algoritmo KNN se debe tener en cuenta tanto la calidad como  el tamaño del conjunto de entrenamiento. 
+% El algoritmo KNN con un valor alto de $k$ ayuda a disminuir el efecto de ruido que podría llegar a tener nuestra base de entrenamiento. Sin embargo, con mayor $k$, es más probable que el algoritmo clasifique erróneamente entre clases parecidas. Luego, es prudente y deseable no dar un valor alto a este parámetro si nuestro conjunto de entrenamiento no es muy "ruidoso". %TODO: decirlo más formal
+
+% También observaremos errores de clasificación si nuestro conjunto de entrenamiento es muy chico (es decir, disponemos de pocas muestras) con respecto al $k$. Si llevamos este caso al extremo, asignaríamos a $k$ el tamaño de la muestra, y estaríamos siempre clasificando una imagen nueva como la moda de la muestra.
+%desde aca
+
+\subsection{PCA}
+
+%train, med, info.alpha, info.iteraciones, info.epsilon_potencia
+
+El método PCA toma los conjuntos de puntos ya etiquetados y los que deben ser etiquetados y reduce su dimensión de acuerdo a lo ya explicado en la sección \ref{sec::intro}. Para esto se necesita definir un $\alpha$ que indica la cantidad dimensiones a la que deben ser reducidos.
+
+Además, como se decidió calcular los autovectores de la mátriz usando el método de la potencia se deben proveer los criterio de corte del algoritmo. En este caso, el criterio está dado por un $\epsilon$ cercano a cero y una cantidad de iteraciones $i$ fija. El primero determina una cota de convergencia sobre los resultados en cada iteración del algoritmo, cuando esta cota no es alcanzada en la $i$-ésima iteración se considera que el valor conseguido es el resultado deseado (aunque esto puede ser que no sea cierto).
+
+% El objetivo principal de PCA es encontrar $P$ tal que maximice $var(XP)$.
+
+% Dada una matriz $X \in R^{n \times m}$ centrada a la media, busca una matriz $P \in R^{m \times m}$ ortogonal tal que permita realizar el siguiente cambio de variables
+% \begin{equation*}
+% T = XP
+% \end{equation*}
+% de forma tal que las nuevas variables $t_1,\dots,t_p$ no estén correlacionadas entre sí y estén ordenadas por su varianza.
+
+% ¿ Por qué importa la varianza? Nosotros queremos que el sistema sepa diferenciar entre reseñas de distintas clases.  Éstas pueden tener características en común y características que las distinguen. Las que son en común no nos dan mucha información a la hora de diferenciar imágenes, mientras que las otras sí. Entonces, nos importa más que el sistema las diferencie en base a las características que no son comunes. Mientras más común es una característica, menor será la varianza de las variables que influyen en ella. Por lo tanto, si tomamos las variables con mayor varianza y comparamos reseñas en base a ellas, diferenciaremos considerando las características que más distinguen a las reseñas.
+
+% Esto lo logra tomando $P$ de forma tal que esté compuesto por los autovectores de la matriz $cov(X,X)$. Veamos por qué.
+% Como dijimos antes, buscamos la matriz $P \in R^{m \times m}$ ortogonal tal que el cambio de variables $T = XP$ haga que las nuevas variables $t_1,\dots,t_m$ no estén correlacionadas entre sí y que estén ordenadas por su varianza. En otras palabras, queremos que la matriz de covarianza $cov(T,T)$ sea diagonal y que sus elementos estén en orden decreciente. Esto es porque como los elementos fuera de la diagonal representan la covarianza entre distintas variables entonces si la matriz de covarianza queda diagonal estos valores son cero, es decir cero covarianza entre dos variables distintas. A su vez la $i$-ésima diagonal representa la varianza de la $i$-ésima variable, para $1 \leq i  \leq  \#variables$, y por construcción quedan en orden decreciente dando como resultado que las primeras diagonales son asociadas a variables con mayor varianza. \\
+% Como $X$ es centrada a la media, $T$ también lo es. Entonces vale que
+% \begin{equation*}
+% cov(T,T) = \frac{1}{n-1}T^{t}T = \frac{1}{n-1}(P^{t}X^{t})(XP) = \frac{1}{n-1}P^{t}X^{t}XP = P^{t}SP
+% \end{equation*}
+% donde $S = \frac{1}{n-1}X^{t}X$ es la matriz de covarianza de X. Como S es simétrica, se la puede diagonalizar ortogonalmente, valiendo entonces que $S = UDU^t$ donde $D$ es una matriz diagonal que contiene los autovalores de $X$ ordenados en forma descendiente y $U$ está formada por los autovectores correspondientes a dichos autovalores. Reemplazando en la primera ecuación queda que
+% \begin{equation*}
+% cov(T,T) = P^{t}SP = P^{t}UDU^{t}P
+% \end{equation*}
+% Tomando $P = U$, donde $U$ es ortogonal y por lo tanto $U^tU = I$, resulta que
+% \begin{equation*}
+% cov(T,T) = U^{t}UDU^{t}U = D
+% \end{equation*}
+%  que era lo que queríamos que cumpla $P$.
+
+% Esto sólo nos asegura que $T = XP$ cumple que maximiza $var(XP)$, no cambiamos la dimensionalidad. Para lograrlo, armamos P sólo con los primeros $\alpha$ autovectores de $cov(X,X)$ asociados a los $\alpha$ primeros autovalores que por construcción son los de mayor valor y representan la mayor varianza dentro del conjunto de reseñas, por lo que queda que $P \in R^{n \times \alpha}$ y $T \in R^{n \times \alpha}$. Luego la dimensión se reduce a $\alpha$ que es la cantidad de vectores de P y son los que mejor describen la distribución de datos.
+
+% La forma en la que usamos PCA en el sistema es similar a lo anterior. Dada nuestra base de datos de reseñas $X \in R^{n \times m}$, tomamos su media, creamos la matriz de covarianza $cov(X,X)$ y buscamos sus primeros $\alpha$ autovectores para armar la matriz $P$, para realizar el cambio de variables (y dimensionalidad). La matriz de covarianza se calcula usando su definición matemática y los autovectores se obtienen usando Método de la Potencia + Deflación. 
+%En el contexto de clasificación de reseñas, a los autovectores de $cov(X,X)$ también se los llama autocaras o eigenfaces y forman un espacio vectorial.
+
+
+% \subsection{Método de la potencia + Deflación}
+% PCA arma la matriz $P$ utilizada en el cambio de variables como una matriz compuesta por los autovectores de $cov(X,X)$. El problema que tenemos ahora es cómo obtener dichos autovectores.
+
+% La matriz $cov(X,X)$ es por definición simétrica, es $X^tX$ por un escalar y por lo tanto $cov(X,X)^t = (kX^tX)^t = kX^tX^{tt} = kX^tX = cov(X,X)$. Luego, sus autovectores forman una base ortogonal y sus autovalores son números reales, por lo tanto tienen orden y vale que $\modulo{\lambda_1} \geq \modulo{\lambda_2} \geq \dots \geq \modulo{\lambda_n}$ donde $\lambda_i$ es un autovalor de la matriz.
+
+% El método que usamos para extraer sus autovalores y autovectores es el Método de la Potencia. Éste es un método iterativo  (osea, repite una serie de pasos una determinada cantidad de veces) que nos da el autovalor de mayor módulo y su autovector asociado.
+
+% Sea la matriz $B \in R^{n \times n}$ de la que se quiere extraer los autovalores y autovectores, $x_0$ un vector en $R^n$ y $niter$ la cantidad de iteraciones a realizar. Si $B$ tiene una base de autovectores y se cumple además que $\modulo{\lambda_1} \geq \modulo{\lambda_2} \geq \dots \geq \modulo{\lambda_n}$ para los autovalores de B, entonces se puede conseguir el autovector buscado usando el siguiente código 
+
+% \begin{algorithm}
+%  $v = x_0$\\
+%  \For{$i = 1,\dots,niter$}{
+%  	$v = \frac{Bv}{\norm{Bv}}$
+%  }
+%  $\lambda = \frac{v^{t}Bv}{v^{t}v}$
+%  Devuelve $\lambda$ y $v$
+% \end{algorithm}
+
+% Como la matriz $cov(X,X)$ cumple las condiciones pedidas por el Método de la Potencia, podemos usarlo para calcular el autovector buscado.
+
+% Con este método sólo obtenemos un autovector. Para obtener una cantidad $z$ de autovectores, se usa Deflación. ¿En qué consiste? Sea una matriz $B \in R^{n \times n}$ con autovalores distintos $\modulo{\lambda_1} \geq \modulo{\lambda_2} \geq \dots \geq \modulo{\lambda_n}$ y con una base ortonormal de autovectores. Entonces, la matriz $B-\lambda_{1}v_{1}v_{1}^{t}$ tiene autovalores $0,\lambda_2,\dots,\lambda_n$ con autovectores asociados $v_1,v_2,\dots,v_n$, donde $v_i$ es el autovector asociado a $\lambda_{i}$ de $B$ para $1 \leq i \leq n $.
+
+% Entonces lo que vamos hacer para obtener los $z$ autovectores es:
+% \begin{enumerate}
+% \item Extraer el autovector $v_i$ asociado al autovalor $\lambda_i$ de mayor módulo de $B$.
+% \item Nos guardamos $v_i$ para armar la matriz $P$.
+% \item Actualizamos a $B$ como $B-\lambda_{i}v_{i}v_{i}^{t}$.
+% \item Repetimos desde el primer paso hasta obtener $z$ autovectores, $z \leq n$ .
+% \end{enumerate}
+
+% De esta forma, podemos obtener los autovectores requeridos en PCA.
+
+% \subsection{Métodos de evaluación del sistema y formas de medición}
+% En este punto ya tenemos el sistema armado, ahora nos interesa analizar su comportamiento ante determinados parámetros de entrada y evaluar su desempeño, pero ¿cómo lo hacemos?.
+
+% Como sólo contamos con la base de datos ya etiquetada, podríamos considerar partirla en 2 partes: una actúa como si fueran reseñas aún no clasificadas (base de test) y otra como la base de datos clasificada (base de entrenamiento).
+
+% Ahora que tenemos cómo evaluar el comportamiento del sistema, nos falta ver qué evaluamos del mismo y cómo lo medimos.
+
+% Lo primero que se nos ocurre es medir cuantas veces el sistema clasifico correctamente las reseñas en relación a la cantidad total de reseñas analizadas. Esta medida se llama Accuracy. También definida como 
+% \begin{equation*}
+% \frac{tp tn}{total testeado} 
+% \end{equation*}
+% Si bien es importante, puede ser engañosa. Si acertamos el $95\%$ de las veces parece bueno, pero si en realidad tenemos 2 clases y la mayoría de las reseñas es de una misma clase, puede ocurrir que el sistema sólo sea bueno en reconocer miembros de esa clase. Sin embargo, en nuestro datase estas cantidad se encuentran balanceadas.
+
+% Otras dos medidas complementarias que utilizamos en en este trabajo son las siguientes:
+
+% \textbf{\underline{Precision}}: Mide cuántos aciertos relativos tiene un clasificador dentro de una clase particular. Está dado por la fórmula
+% \begin{equation*}
+% \frac{tp}{tp + fp}
+% \end{equation*}
+% donde $tp$ es la cantidad de veces que se clasifico a una reseña como positiva y $fp$ es la cantidad de veces que se clasificó a una reseña como positiva cuando realmente no lo era.
+
+% \textbf{\underline{Recall}}: Mide que tan bueno es el clasificador para identificar correctamente a los miembros de una clase en particular. Se define como
+% \begin{equation*}
+% \frac{tp}{tp+fn}
+% \end{equation*}
+% donde $fn$ es la cantidad de muestras que son positivas pero son clasificadas como negativas. \\
+
+% Con el fin de analizar el sentimiento de una reseña de película nos interesa más la Accuracy ya que por definición es la que mide el acierto del clasificador, es decir, si el sentimiento desplegado por la review es positivo y negativo. Así, podemos saber la efectividad en el reconocimiento automático de la valoración que un usuario realiza de una película basándonos solo en el análisis del texto de una reseña que aquel escribió. \\
+

@@ -41,13 +41,15 @@ int tp2(IOUtils &utilidad, info_archivo &info){
     //Seteamos el seed de random
     srandom(0);
     
-    utilidad.leer_archivos_csv(info.in_train,info.in_test,info);
-    cout << "hi" << endl;
+    utilidad.leer_archivos_csv(info.in_train,info.in_test,info, train_entries, test_entries);
     //Cambio la cantidad de digitos con las que nos muestra los doubles en pantalla
     cout << fixed;std::setprecision(50);   
 
     Matriz<double> train(utilidad.armar_base_entrenamiento(info, train_entries, N));
     Matriz<double> test(utilidad.armar_casos_tests(info, test_entries, N));
+
+    train_entries.clear();
+    test_entries.clear();
 
     std::cerr
         << "N: " << N << std::endl
@@ -76,9 +78,13 @@ int tp2(IOUtils &utilidad, info_archivo &info){
         total = conv;
     }
      
-    clock_t clasif = clock();
+
     // Clasificamos las review de test usando las de train y obtenemos mediciones
     Clasificador c(train, info.train_clase_x_fila, info.norma_2);
+
+    train.clear();
+
+    clock_t clasif = clock();
     medidas_info r = c.clasificar_y_medir(test, info.test_clase_x_fila, info.k);
     clasif = ((clock() - clasif));
     total = total + clasif;

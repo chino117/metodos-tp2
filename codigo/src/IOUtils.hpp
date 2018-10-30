@@ -26,8 +26,8 @@ struct info_archivo
 {
     //pathas a archivos.
     string db_path = "../datos/imdb_tokenized.csv";
-    string in_train;
-    string in_test;
+    string in_train = "";
+    string in_test = "";
     string out_res;
     string output_medidas;
     Modo m;
@@ -36,7 +36,7 @@ struct info_archivo
     unsigned int n_test;
 
     bool experimentacion;
-    bool norma_2 = false;
+    bool norma_2;
 
     unsigned int k;
     unsigned int alpha;
@@ -83,7 +83,7 @@ public:
 	IOUtils();
 	~IOUtils();
 	int parse(int arc, char** argv, info_archivo& info);
-	void leer_archivos_csv(string path_1, string path_2, info_archivo& info);
+	void leer_archivos_csv(string path_1, string path_2, info_archivo& info, const VectorizedEntriesMap& train_entries, const VectorizedEntriesMap& test_entries);
     Matriz<double> leer_bag_of_words(vector<double>& bag_of_words, int N);
     Matriz<double> armar_base_entrenamiento(info_archivo &info, VectorizedEntriesMap& train_entries, int N);
     Matriz<double> armar_casos_tests(info_archivo &info,  VectorizedEntriesMap& test_entries, int N);
@@ -110,15 +110,17 @@ int IOUtils::parse(int argc, char** argv, info_archivo& info){
     }
 
     //Cargo los datos del archivo input
+
     info.k = 1;
     info.alpha = 15;
     info.m = kNN;
     int modo_s;
     info.experimentacion = false;
-    info.iteraciones = 200;
+    info.iteraciones = 6000;
     info.epsilon_potencia = EPSILON;
     info.lower_filter = 0.01;
     info.upper_filter = 0.99;
+    info.norma_2 = false;
 
    	char option;
     while ((option = getopt(argc, argv, "m:d:i:q:o:k:a:r:eit:ep:l:u:n:")) != -1) {
@@ -199,6 +201,7 @@ int IOUtils::parse(int argc, char** argv, info_archivo& info){
             }
             case 'n':{
                 info.norma_2 = stoi(optarg);
+                break;
             }
 
             default: { // si las opciones son inválidas
@@ -237,7 +240,14 @@ int IOUtils::parse(int argc, char** argv, info_archivo& info){
 
 }    
 
-void IOUtils::leer_archivos_csv(string path_1, string path_2, info_archivo& info){
+void IOUtils::leer_archivos_csv(string path_1, string path_2, info_archivo& info, const VectorizedEntriesMap& train_entries, const VectorizedEntriesMap& test_entries){
+
+
+    string review;
+    string etiqueta;
+    info.n_train = 0;
+    
+if(path_1 != ""){
     fstream fs1;
     fs1.open(path_1.c_str(),std::fstream::in);
     
@@ -245,21 +255,7 @@ void IOUtils::leer_archivos_csv(string path_1, string path_2, info_archivo& info
     {
         cout<<"Fallo lectura archivo 1 .csv";
         return;
-    }
-
-    fstream fs2;
-    fs2.open(path_2.c_str(),std::fstream::in);
-    
-    if(!fs2.good())
-    {
-        std::cout<<"Fallo lectura archivo 2 .csv";
-        return;
-    }
-    ///cout << "hola" << endl;
-
-    string review;
-    string etiqueta;
-    info.n_train = 0;
+    };
 
 
     while(fs1 >> review)
@@ -280,8 +276,24 @@ void IOUtils::leer_archivos_csv(string path_1, string path_2, info_archivo& info
     }    
     fs1.close();
     
+}else{
 
+    info.n_train = train_entries.size();
+}
     ////////////
+
+if(path_2 != ""){
+
+
+    fstream fs2;
+    fs2.open(path_2.c_str(),std::fstream::in);
+    
+    if(!fs2.good())
+    {
+        std::cout<<"Fallo lectura archivo 2 .csv";
+        return;
+    }
+
 	info.n_test = 0;
 
     while(fs2 >> review)
@@ -300,6 +312,11 @@ void IOUtils::leer_archivos_csv(string path_1, string path_2, info_archivo& info
     }
 
     fs2.close();
+
+}else{
+    info.n_test = test_entries.size();
+}
+
 }
 
 Matriz<double> IOUtils::leer_bag_of_words(vector<double>& bag_of_words, int N)
@@ -325,45 +342,101 @@ Matriz<double> IOUtils::leer_bag_of_words(vector<double>& bag_of_words, int N)
 // Devuelve una matriz con las reviews de entrenamiento como vectores fila
 Matriz<double> IOUtils::armar_base_entrenamiento(info_archivo &info, VectorizedEntriesMap& train_entries, int N)
 {
+
+
     Matriz<double> res(info.n_train, N, 0);
     int cant_reviews= 0;
 
     info.train_clase_x_fila = vector<int>(info.n_train);
 
+if(info.in_train != ""){
     for (auto it = info.train_cases.begin(); it != info.train_cases.end(); it++)
     {
-        Matriz<double> bow = leer_bag_of_words((train_entries[it->first]).bag_of_words, N);
+        auto it2 = train_entries.find(it->first);
+        if( it2 != train_entries.end()){
+
+            Matriz<double> bow = leer_bag_of_words(it2->second.bag_of_words, N);
+          
+            res.set_fil(cant_reviews, bow);
+        
+            // Agrego clase al vector de clase x fila del train.
+            info.train_clase_x_fila[cant_reviews] = it->second;
+
+
+            cant_reviews++;
+        }
+        else{
+            (info.train_cases).erase(it);
+            info.n_train--;
+        }
+    }
+}
+else{
+    
+    for (auto it = train_entries.begin(); it != train_entries.end(); it++){
+
+        Matriz<double> bow = leer_bag_of_words(it->second.bag_of_words, N);
           
         res.set_fil(cant_reviews, bow);
         
         // Agrego clase al vector de clase x fila del train.
-        info.train_clase_x_fila[cant_reviews] = it->second;
+        info.train_clase_x_fila[cant_reviews] = it->second.is_positive;
+        cant_reviews++;   
 
-        cant_reviews++;
     }
+}
 
-    return res;
+
+return res;
+
 }
 
 // Devuelve una matriz con las reviews de test como vectores fila
 Matriz<double> IOUtils::armar_casos_tests(info_archivo &info, VectorizedEntriesMap& test_entries, int N)
 {
-    Matriz<double> res(info.n_test, N, 0);
+    Matriz<double> res(test_entries.size(), N, 0);
     int cant_reviews= 0;
 
     info.test_clase_x_fila = vector<int>(info.n_test);
 
+if(info.in_test != ""){
     for(auto it = info.test_cases.begin(); it != info.test_cases.end(); it++)
     {   
-            Matriz<double> bow = leer_bag_of_words((test_entries[it->first]).bag_of_words, N);
+        auto it2 = test_entries.find(it->first);
+        if(it2 != test_entries.end() ){
+
+            Matriz<double> bow = leer_bag_of_words(it2->second.bag_of_words, N);
           
             res.set_fil(cant_reviews, bow);
 
             info.test_clase_x_fila[cant_reviews] = it->second;
 
             cant_reviews++;
+        }
+        else{
+            (info.test_cases).erase(it);
+            info.n_test--;
+        }
         
     }
+
+}
+else{
+
+      for (auto it = test_entries.begin(); it != test_entries.end(); it++){
+
+        Matriz<double> bow = leer_bag_of_words(it->second.bag_of_words, N);
+          
+        res.set_fil(cant_reviews, bow);
+        
+        // Agrego clase al vector de clase x fila del train.
+        info.test_clase_x_fila[cant_reviews] = it->second.is_positive;
+        info.test_cases[it->first] = it->second.is_positive;
+        cant_reviews++;   
+
+    }  
+
+}    
     return res;
 }
 
